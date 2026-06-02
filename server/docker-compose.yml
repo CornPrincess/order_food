@@ -1,0 +1,25 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    # 默认不对外暴露端口，仅容器网络内访问。如需本机连库可解开下面两行：
+    # ports:
+    #   - "27017:27017"
+
+  app:
+    build: .
+    restart: always
+    depends_on:
+      - mongo
+    env_file:
+      - .env
+    environment:
+      # 覆盖 .env，确保容器内指向 mongo 服务名
+      - MONGODB_URI=mongodb://mongo:27017/order_food
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongo_data:

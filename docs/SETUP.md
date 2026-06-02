@@ -36,6 +36,8 @@
 | `DEEPSEEK_MODEL` | 否 | 默认 `deepseek-chat` |
 
 > 换用其它 OpenAI 兼容的国产模型（通义/豆包等）只需改 BASE_URL、MODEL、KEY 即可，无需改代码。
+>
+> `DEEPSEEK_API_KEY` 的申请方式见 [server/README.md「环境变量：含义与获取方式」](../server/README.md#环境变量含义与获取方式)。
 
 ## 6. 导入种子数据
 
