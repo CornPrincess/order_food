@@ -13,8 +13,12 @@
 ## 技术栈
 
 - 微信原生小程序（WXML/WXSS/JS）
-- 微信云开发 CloudBase：云数据库 + 云函数
-- 国产大模型 DeepSeek（OpenAI 兼容接口，经云函数调用，规避小程序合法域名限制）
+- **后端两套可切换**（前端 `app.js` 的 `backend` 开关）：
+  - `cloud`：微信云开发 CloudBase（云数据库 + 7 个云函数）
+  - `server`：自建后端 Express + MongoDB，Docker 部署到自己的服务器（如阿里云），见 [server/README.md](server/README.md)
+- 国产大模型 DeepSeek（OpenAI 兼容接口，经后端调用，规避小程序合法域名限制）
+
+> 两套后端的接口名、入参、返回信封完全一致，业务逻辑等价；切换只需改 `app.js` 的 `backend` 与对应地址。
 
 ## 目录结构
 
