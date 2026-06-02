@@ -11,5 +11,13 @@ module.exports = {
     apiKey: process.env.DEEPSEEK_API_KEY || '',
     baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
     model: process.env.DEEPSEEK_MODEL || 'deepseek-chat'
+  },
+  logLevel: process.env.LOG_LEVEL || 'info', // debug | info | warn | error
+  // 限流窗口与上限（按 IP+openid 计），均可用环境变量覆盖
+  rateLimit: {
+    windowMs: Number(process.env.RATE_WINDOW_MS) || 60 * 1000,
+    apiMax: Number(process.env.RATE_API_MAX) || 120,    // 全局每窗口请求数
+    loginMax: Number(process.env.RATE_LOGIN_MAX) || 10, // 登录每窗口次数
+    aiMax: Number(process.env.RATE_AI_MAX) || 10        // AI 接口每窗口次数
   }
 };

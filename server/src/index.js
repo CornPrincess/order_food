@@ -2,14 +2,15 @@
 const mongoose = require('mongoose');
 const app = require('./app');
 const { port, mongoUri } = require('./config');
+const logger = require('./logger');
 
 async function start() {
   try {
     await mongoose.connect(mongoUri);
-    console.log('[db] MongoDB 已连接');
-    app.listen(port, () => console.log(`[server] 监听端口 ${port}`));
+    logger.info('MongoDB 已连接');
+    app.listen(port, () => logger.info(`服务监听端口 ${port}`));
   } catch (err) {
-    console.error('[server] 启动失败:', err.message);
+    logger.error('启动失败:', err.message);
     process.exit(1);
   }
 }

@@ -19,6 +19,16 @@
 
 鉴权方式：登录后返回 `token`，后续请求带 `Authorization: Bearer <token>`。
 
+## 日志与限流
+
+- **访问日志**：`morgan` 输出每条请求 `IP openid 方法 路径 状态码 耗时`，经统一 `logger` 打到 stdout（`docker compose logs -f app` 查看）。级别由 `LOG_LEVEL` 控制。
+- **限流**：`express-rate-limit`，按「IP + openid」计数，窗口内超限返回 `429`：
+  - 全局接口 `RATE_API_MAX`（默认 120/分钟）
+  - 登录 `RATE_LOGIN_MAX`（默认 10/分钟，防爆破）
+  - AI 接口 `RATE_AI_MAX`（默认 10/分钟，控大模型成本）
+  - 响应头含标准 `RateLimit-*`。窗口与上限均可在 `.env` 调整。
+- 应用部署在 Nginx 之后，已 `trust proxy`，限流按真实客户端 IP 计数（需 Nginx 透传 `X-Forwarded-For`，示例配置已包含）。
+
 ## 与云函数的差异
 
 - **登录**：云函数用 `getWXContext()` 自动取 openid；这里由小程序 `wx.login()` 拿 `code`，后端用 `WX_APPID + WX_SECRET` 调 `code2session` 换 openid，再签发 JWT。
