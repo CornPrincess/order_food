@@ -1,0 +1,99 @@
+/* app.wxss — 全局样式 */
+page {
+  --primary: #0052d9;
+  --primary-light: #e6efff;
+  --bg: #f5f6f7;
+  --text: #1a1a1a;
+  --text-secondary: #888888;
+  --border: #ebedf0;
+  --success: #2ba471;
+  --warning: #e37318;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "PingFang SC", Helvetica, sans-serif;
+  font-size: 28rpx;
+}
+
+.container {
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 20rpx;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  padding: 20rpx 0;
+  text-align: center;
+  border: none;
+}
+.btn-primary::after { border: none; }
+
+.btn-ghost {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  padding: 20rpx 0;
+  text-align: center;
+  border: none;
+}
+.btn-ghost::after { border: none; }
+
+.tag {
+  display: inline-block;
+  font-size: 22rpx;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 8rpx;
+  padding: 4rpx 14rpx;
+  margin: 0 10rpx 10rpx 0;
+}
+
+.tag-muted {
+  color: var(--text-secondary);
+  background: #f0f1f2;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.muted {
+  color: var(--text-secondary);
+  font-size: 24rpx;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 80rpx 0;
+  font-size: 26rpx;
+}
+
+.loading {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40rpx 0;
+}

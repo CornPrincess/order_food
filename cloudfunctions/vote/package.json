@@ -1,0 +1,9 @@
+{
+  "name": "vote",
+  "version": "1.0.0",
+  "description": "今日点餐与投票",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

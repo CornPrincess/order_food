@@ -1,0 +1,29 @@
+<view class="container">
+  <view class="card intro">
+    <view class="intro-emoji">🤖</view>
+    <view class="intro-title">AI 智能配菜</view>
+    <view class="muted intro-sub">结合全家口味、忌口与当季食材，为今天推荐一桌菜</view>
+    <button class="btn-primary gen-btn {{generating?'disabled':''}}"
+      bindtap="onGenerate" disabled="{{generating}}">
+      {{generating ? 'AI 正在配菜…' : (hasResult ? '换一批' : '开始智能推荐')}}
+    </button>
+  </view>
+
+  <view wx:if="{{generating}}" class="loading">大模型思考中，请稍候…</view>
+
+  <view class="card rec-card" wx:for="{{recipes}}" wx:key="recipeId">
+    <view class="row-between">
+      <view class="rec-name">{{item.name}}</view>
+      <view class="muted">{{item.cookTime}}分钟 · {{item.difficulty}}</view>
+    </view>
+    <view class="reason" wx:if="{{item.reason}}">💡 {{item.reason}}</view>
+    <view class="tags">
+      <text class="tag" wx:for="{{item.tasteTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+      <text class="tag tag-muted" wx:for="{{item.nutritionTags}}" wx:for-item="n" wx:key="*this">{{n}}</text>
+    </view>
+    <view class="actions">
+      <view class="act-ghost" data-id="{{item.recipeId}}" bindtap="viewDetail">查看做法</view>
+      <view class="act-primary" data-item="{{item}}" bindtap="addToOrder">加入点餐</view>
+    </view>
+  </view>
+</view>
