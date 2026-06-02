@@ -1,0 +1,25 @@
+<view class="container" wx:if="{{recipe}}">
+  <view class="card">
+    <view class="title">{{recipe.name}}</view>
+    <view class="muted meta">{{recipe.cuisine}} · {{recipe.cookTime}}分钟 · 难度{{recipe.difficulty}}</view>
+    <view class="tags">
+      <text class="tag" wx:for="{{recipe.tasteTags}}" wx:key="*this">{{item}}</text>
+      <text class="tag tag-muted" wx:for="{{recipe.nutritionTags}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">食材</view>
+    <view class="ingredient" wx:for="{{recipe.ingredients}}" wx:key="*this">· {{item}}</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">做法</view>
+    <view class="step" wx:for="{{recipe.steps}}" wx:key="*this">
+      <view class="step-no">{{index + 1}}</view>
+      <view class="step-text">{{item}}</view>
+    </view>
+  </view>
+</view>
+<view wx:elif="{{loading}}" class="loading">加载中…</view>
+<view wx:else class="empty">菜谱不存在</view>

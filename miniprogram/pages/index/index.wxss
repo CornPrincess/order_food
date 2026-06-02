@@ -1,0 +1,48 @@
+.greeting { padding: 16rpx 0 24rpx; }
+.hi { font-size: 40rpx; font-weight: 700; }
+
+.link { color: var(--primary); font-size: 26rpx; }
+
+.dish-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--border);
+}
+.dish-line:last-child { border-bottom: none; }
+.dish-name { font-size: 30rpx; }
+.vote-badge {
+  font-size: 22rpx; color: var(--primary);
+  background: var(--primary-light); padding: 4rpx 16rpx; border-radius: 999rpx;
+}
+.status { margin-top: 16rpx; }
+
+.ingredients { margin-bottom: 8rpx; }
+.sub-title { font-weight: 600; margin: 24rpx 0 16rpx; font-size: 28rpx; }
+.scroll-row { white-space: nowrap; }
+.dish-card {
+  display: inline-block;
+  width: 220rpx;
+  background: var(--bg);
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-right: 16rpx;
+  white-space: normal;
+}
+.dish-card-name { font-weight: 600; margin-bottom: 8rpx; }
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+}
+.grid-item {
+  flex: 1 1 calc(50% - 12rpx);
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 36rpx 0;
+  text-align: center;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
+}
+.grid-emoji { font-size: 56rpx; margin-bottom: 12rpx; }

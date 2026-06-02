@@ -1,0 +1,60 @@
+<view class="container">
+  <!-- 顶部问候 -->
+  <view class="greeting">
+    <view class="greeting-text">
+      <view class="hi">嗨，{{user.nickname || '家人'}} 👋</view>
+      <view class="muted">{{family.name}} · {{season}}季 · {{solarTerm}}</view>
+    </view>
+  </view>
+
+  <!-- 今日菜单 -->
+  <view class="card">
+    <view class="row-between">
+      <view class="card-title">今日{{meal}}餐</view>
+      <view class="link" bindtap="goOrder">去点餐 ›</view>
+    </view>
+    <block wx:if="{{todayMenu && todayMenu.items.length}}">
+      <view class="dish-line" wx:for="{{todayMenu.items}}" wx:key="recipeId">
+        <text class="dish-name">{{item.name}}</text>
+        <text class="vote-badge">{{item.votedBy.length}} 票</text>
+      </view>
+      <view class="muted status">状态：{{todayMenu.status}}</view>
+    </block>
+    <view wx:else class="empty">还没点菜，去点一桌好菜吧～</view>
+  </view>
+
+  <!-- 时令推荐 -->
+  <view class="card" wx:if="{{seasonal}}">
+    <view class="card-title">🌱 时令推荐 · {{seasonal.solarTerm}}</view>
+    <view class="muted" style="margin-bottom:16rpx">{{seasonal.note}}</view>
+    <view class="ingredients">
+      <text class="tag" wx:for="{{seasonal.ingredients}}" wx:key="*this">{{item}}</text>
+    </view>
+    <view class="season-dishes" wx:if="{{seasonal.recipes.length}}">
+      <view class="sub-title">当季家常菜</view>
+      <scroll-view scroll-x class="scroll-row">
+        <view class="dish-card" wx:for="{{seasonal.recipes}}" wx:key="_id"
+          data-id="{{item._id}}" bindtap="goRecipes">
+          <view class="dish-card-name">{{item.name}}</view>
+          <view class="muted">{{item.cuisine}} · {{item.cookTime}}分钟</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 快捷入口 -->
+  <view class="grid">
+    <view class="grid-item" bindtap="goRecommend">
+      <view class="grid-emoji">🤖</view><view>智能推荐</view>
+    </view>
+    <view class="grid-item" bindtap="goAnalysis">
+      <view class="grid-emoji">📊</view><view>饮食分析</view>
+    </view>
+    <view class="grid-item" bindtap="goRecipes">
+      <view class="grid-emoji">📖</view><view>菜谱库</view>
+    </view>
+    <view class="grid-item" bindtap="goOrder">
+      <view class="grid-emoji">🗳️</view><view>家庭投票</view>
+    </view>
+  </view>
+</view>

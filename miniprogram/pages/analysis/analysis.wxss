@@ -1,0 +1,20 @@
+.intro { text-align: center; padding: 44rpx 28rpx; }
+.intro-emoji { font-size: 88rpx; }
+.intro-title { font-size: 34rpx; font-weight: 700; margin: 16rpx 0 12rpx; }
+.gen-btn { margin-top: 28rpx; }
+
+.stat-row { display: flex; align-items: center; padding: 12rpx 0; }
+.stat-tag { width: 140rpx; font-size: 26rpx; }
+.stat-bar-bg { flex: 1; background: var(--bg); border-radius: 999rpx; height: 24rpx; overflow: hidden; }
+.stat-bar { background: var(--primary); height: 24rpx; border-radius: 999rpx; max-width: 100%; }
+.stat-count { width: 60rpx; text-align: right; font-size: 26rpx; color: var(--text-secondary); }
+
+.badge { font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 999rpx; margin-left: 12rpx; }
+.badge.good { background: #e3f9ee; color: var(--success); }
+.badge.warn { background: #fff1e6; color: var(--warning); }
+
+.summary { line-height: 1.6; margin-bottom: 16rpx; }
+.section { margin-top: 24rpx; }
+.sec-title { font-weight: 600; margin-bottom: 12rpx; }
+.li { line-height: 1.7; color: var(--text); }
+.tags { display: flex; flex-wrap: wrap; }

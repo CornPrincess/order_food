@@ -1,0 +1,30 @@
+<view class="container">
+  <view class="meal-tabs">
+    <view class="meal-tab {{meal===item?'active':''}}" wx:for="{{meals}}" wx:key="*this"
+      data-meal="{{item}}" bindtap="switchMeal">{{item}}餐</view>
+  </view>
+
+  <view class="card">
+    <view class="row-between">
+      <view class="card-title">今日{{meal}}餐候选</view>
+      <view class="link" bindtap="addFromRecipes">+ 加菜</view>
+    </view>
+
+    <block wx:if="{{menu && menu.items.length}}">
+      <view class="vote-item" wx:for="{{menu.items}}" wx:key="recipeId">
+        <view class="vote-info">
+          <view class="vote-name">{{item.name}}</view>
+          <view class="muted">{{item.voteCount}} 人想吃</view>
+        </view>
+        <view class="vote-btn {{item.voted?'voted':''}}"
+          data-id="{{item.recipeId}}" bindtap="onToggleVote">
+          {{item.voted ? '已投 ✓' : '投一票'}}
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty">还没有候选菜，点「加菜」从菜谱库添加</view>
+  </view>
+
+  <view wx:if="{{menu && menu.status==='已定'}}" class="finalized">✅ 今日{{meal}}餐已确定</view>
+  <button wx:else class="btn-primary finalize-btn" bindtap="onFinalize">确定今日菜单</button>
+</view>

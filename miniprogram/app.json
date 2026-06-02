@@ -1,0 +1,51 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/onboarding/onboarding",
+    "pages/order/order",
+    "pages/recipes/recipes",
+    "pages/recipeDetail/recipeDetail",
+    "pages/recommend/recommend",
+    "pages/analysis/analysis",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "家庭点餐",
+    "backgroundColor": "#f5f6f7",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#0052d9",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/order/order",
+        "text": "点餐"
+      },
+      {
+        "pagePath": "pages/recommend/recommend",
+        "text": "推荐"
+      },
+      {
+        "pagePath": "pages/analysis/analysis",
+        "text": "分析"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {},
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

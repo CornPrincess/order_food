@@ -1,0 +1,36 @@
+<view class="container">
+  <view class="hero">
+    <view class="hero-emoji">🍲</view>
+    <view class="hero-title">家庭点餐</view>
+    <view class="hero-sub">和家人一起决定今天吃什么</view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{mode==='create'?'active':''}}" data-mode="create" bindtap="switchMode">创建家庭</view>
+    <view class="tab {{mode==='join'?'active':''}}" data-mode="join" bindtap="switchMode">加入家庭</view>
+  </view>
+
+  <view class="card">
+    <block wx:if="{{mode==='create'}}">
+      <view class="field-label">家庭名称</view>
+      <input class="field" placeholder="例如：温馨小家" data-field="familyName"
+        value="{{familyName}}" bindinput="onInput" />
+      <view class="field-label">我的身份</view>
+      <input class="field" placeholder="例如：爸爸 / 妈妈 / 我" data-field="role"
+        value="{{role}}" bindinput="onInput" />
+      <button class="btn-primary" bindtap="onCreate">创建并进入</button>
+    </block>
+
+    <block wx:else>
+      <view class="field-label">邀请码</view>
+      <input class="field" placeholder="输入家人分享的 6 位邀请码" data-field="inviteCode"
+        value="{{inviteCode}}" bindinput="onInput" maxlength="6" />
+      <view class="field-label">我的身份</view>
+      <input class="field" placeholder="例如：爸爸 / 妈妈 / 孩子" data-field="role"
+        value="{{role}}" bindinput="onInput" />
+      <button class="btn-primary" bindtap="onJoin">加入家庭</button>
+    </block>
+  </view>
+
+  <view class="muted tip">创建家庭后，把邀请码分享给家人即可一起点餐</view>
+</view>

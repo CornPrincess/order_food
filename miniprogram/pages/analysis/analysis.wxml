@@ -1,0 +1,57 @@
+<view class="container">
+  <view class="card intro">
+    <view class="intro-emoji">📊</view>
+    <view class="intro-title">最近 {{days}} 天饮食分析</view>
+    <view class="muted">基于全家确定过的菜单，由 AI 分析营养结构</view>
+    <button class="btn-primary gen-btn" bindtap="onAnalyze" disabled="{{loading}}">
+      {{loading ? '分析中…' : '开始分析'}}
+    </button>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">营养师思考中…</view>
+  <view wx:if="{{empty}}" class="empty">{{emptyMsg}}</view>
+
+  <block wx:if="{{hasResult}}">
+    <!-- 营养标签分布 -->
+    <view class="card">
+      <view class="card-title">营养结构（{{stats.mealCount}} 餐）</view>
+      <view class="stat-row" wx:for="{{statList}}" wx:key="tag">
+        <view class="stat-tag">{{item.tag}}</view>
+        <view class="stat-bar-bg">
+          <view class="stat-bar" style="width:{{item.count * 40}}rpx"></view>
+        </view>
+        <view class="stat-count">{{item.count}}</view>
+      </view>
+    </view>
+
+    <!-- AI 评价 -->
+    <view class="card">
+      <view class="card-title">
+        AI 点评
+        <text class="badge {{analysis.balanced?'good':'warn'}}">
+          {{analysis.balanced ? '均衡' : '待调整'}}
+        </text>
+      </view>
+      <view class="summary">{{analysis.summary}}</view>
+
+      <view wx:if="{{analysis.highlights.length}}" class="section">
+        <view class="sec-title">✅ 做得好</view>
+        <view class="li" wx:for="{{analysis.highlights}}" wx:key="*this">· {{item}}</view>
+      </view>
+      <view wx:if="{{analysis.gaps.length}}" class="section">
+        <view class="sec-title">⚠️ 可改进</view>
+        <view class="li" wx:for="{{analysis.gaps}}" wx:key="*this">· {{item}}</view>
+      </view>
+      <view wx:if="{{analysis.suggestions.length}}" class="section">
+        <view class="sec-title">💡 建议</view>
+        <view class="li" wx:for="{{analysis.suggestions}}" wx:key="*this">· {{item}}</view>
+      </view>
+      <view wx:if="{{analysis.nextDishes.length}}" class="section">
+        <view class="sec-title">🍽️ 下次试试</view>
+        <view class="tags">
+          <text class="tag" wx:for="{{analysis.nextDishes}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,33 @@
+.meal-tabs {
+  display: flex;
+  background: #fff;
+  border-radius: 999rpx;
+  padding: 8rpx;
+  margin-bottom: 24rpx;
+}
+.meal-tab {
+  flex: 1; text-align: center; padding: 16rpx 0;
+  border-radius: 999rpx; color: var(--text-secondary);
+}
+.meal-tab.active { background: var(--primary); color: #fff; font-weight: 600; }
+
+.link { color: var(--primary); font-size: 28rpx; }
+
+.vote-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24rpx 0; border-bottom: 1rpx solid var(--border);
+}
+.vote-item:last-child { border-bottom: none; }
+.vote-name { font-size: 32rpx; font-weight: 500; }
+.vote-btn {
+  font-size: 26rpx; color: var(--primary);
+  border: 2rpx solid var(--primary); border-radius: 999rpx;
+  padding: 10rpx 28rpx;
+}
+.vote-btn.voted { background: var(--primary); color: #fff; }
+
+.finalize-btn { margin-top: 16rpx; }
+.finalized {
+  text-align: center; color: var(--success);
+  font-weight: 600; padding: 24rpx; font-size: 30rpx;
+}

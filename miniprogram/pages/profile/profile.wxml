@@ -1,0 +1,46 @@
+<view class="container">
+  <!-- 家庭信息 -->
+  <view class="card">
+    <view class="row-between">
+      <view>
+        <view class="fam-name">{{family.name}}</view>
+        <view class="muted">共 {{members.length}} 位成员</view>
+      </view>
+      <view class="invite" bindtap="copyInvite">
+        <view class="muted">邀请码</view>
+        <view class="invite-code">{{family.inviteCode}}</view>
+      </view>
+    </view>
+    <view class="members">
+      <view class="member" wx:for="{{members}}" wx:key="openid">
+        <view class="avatar">{{item.nickname[0] || '家'}}</view>
+        <view class="member-name">{{item.nickname}}</view>
+        <view class="muted member-role">{{item.role || '成员'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 我的口味档案 -->
+  <view class="card">
+    <view class="card-title">我的身份</view>
+    <input class="field" placeholder="例如：爸爸 / 妈妈 / 孩子" value="{{role}}" bindinput="onRole" />
+
+    <view class="card-title mt">喜欢的口味</view>
+    <view class="chips">
+      <view class="chip {{tastes.includes(item)?'on':''}}" wx:for="{{tasteOptions}}" wx:key="*this"
+        data-v="{{item}}" bindtap="toggleTaste">{{item}}</view>
+    </view>
+
+    <view class="card-title mt">忌口（不爱吃）</view>
+    <view class="chips">
+      <view class="chip {{dislikes.includes(item)?'on-warn':''}}" wx:for="{{dislikeOptions}}" wx:key="*this"
+        data-v="{{item}}" bindtap="toggleDislike">{{item}}</view>
+    </view>
+
+    <view class="card-title mt">过敏原</view>
+    <input class="field" placeholder="多个用顿号分隔，如：花生、海鲜" value="{{allergies}}" bindinput="onAllergies" />
+
+    <button class="btn-primary mt" bindtap="onSave">保存档案</button>
+    <view class="muted hint">口味与忌口会用于全家的智能推荐</view>
+  </view>
+</view>
