@@ -22,6 +22,10 @@
       <view class="muted">{{item.cookTime}}分钟 · {{item.difficulty}}</view>
     </view>
     <view class="muted recipe-cuisine">{{item.cuisine}}</view>
+    <view class="warn-line" wx:if="{{item.conflicts.length}}">
+      <text wx:if="{{item.hasAllergy}}" class="warn warn-allergy">⚠ 过敏原：{{item.allergyHits}}</text>
+      <text wx:if="{{item.dislikeHits.length}}" class="warn warn-dislike">家人忌口：{{item.dislikeHits}}</text>
+    </view>
     <view class="tags">
       <text class="tag" wx:for="{{item.tasteTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
       <text class="tag tag-muted" wx:for="{{item.nutritionTags}}" wx:for-item="n" wx:key="*this">{{n}}</text>

@@ -7,6 +7,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "seed": "node src/scripts/seed.js",
+    "gen:recipes": "node src/scripts/generateRecipes.js",
     "smoke": "node test/smoke.js"
   },
   "dependencies": {

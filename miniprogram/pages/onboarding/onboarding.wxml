@@ -15,21 +15,29 @@
       <view class="field-label">家庭名称</view>
       <input class="field" placeholder="例如：温馨小家" data-field="familyName"
         value="{{familyName}}" bindinput="onInput" />
-      <view class="field-label">我的身份</view>
-      <input class="field" placeholder="例如：爸爸 / 妈妈 / 我" data-field="role"
-        value="{{role}}" bindinput="onInput" />
-      <button class="btn-primary" bindtap="onCreate">创建并进入</button>
     </block>
-
     <block wx:else>
       <view class="field-label">邀请码</view>
       <input class="field" placeholder="输入家人分享的 6 位邀请码" data-field="inviteCode"
         value="{{inviteCode}}" bindinput="onInput" maxlength="6" />
-      <view class="field-label">我的身份</view>
-      <input class="field" placeholder="例如：爸爸 / 妈妈 / 孩子" data-field="role"
-        value="{{role}}" bindinput="onInput" />
-      <button class="btn-primary" bindtap="onJoin">加入家庭</button>
     </block>
+
+    <!-- 昵称：用微信原生昵称输入，方便首页显示具体成员 -->
+    <view class="field-label">我的昵称</view>
+    <input class="field" type="nickname" placeholder="点此使用微信昵称，或自行输入"
+      data-field="nickname" value="{{nickname}}" bindinput="onInput" bindblur="onInput" />
+
+    <!-- 身份：预设可选 + 自定义 -->
+    <view class="field-label">我的身份</view>
+    <view class="chips">
+      <view class="chip {{role===item?'on':''}}" wx:for="{{roleOptions}}" wx:key="*this"
+        data-role="{{item}}" bindtap="selectRole">{{item}}</view>
+    </view>
+    <input class="field" placeholder="或自定义身份，如：外婆 / 室友"
+      value="{{customRole}}" bindinput="onCustomRole" />
+
+    <button class="btn-primary" wx:if="{{mode==='create'}}" bindtap="onCreate">创建并进入</button>
+    <button class="btn-primary" wx:else bindtap="onJoin">加入家庭</button>
   </view>
 
   <view class="muted tip">创建家庭后，把邀请码分享给家人即可一起点餐</view>

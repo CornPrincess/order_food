@@ -33,5 +33,11 @@
   padding: 22rpx;
   margin-bottom: 12rpx;
 }
+.chips { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 8rpx; }
+.chip {
+  padding: 12rpx 28rpx; border-radius: 999rpx;
+  background: var(--bg); color: var(--text-secondary);
+}
+.chip.on { background: var(--primary); color: #fff; }
 .btn-primary { margin-top: 32rpx; }
 .tip { text-align: center; margin-top: 32rpx; }

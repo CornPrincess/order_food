@@ -8,6 +8,41 @@ async function getFamilyId(openid) {
   return me ? me.familyId : '';
 }
 
+// 聚合全家忌口/过敏（须避开）与口味偏好（用于排序）
+async function familyPrefs(familyId) {
+  const out = { dislikes: new Set(), allergies: new Set(), tastes: new Set() };
+  if (!familyId) return out;
+  const members = await User.find({ familyId });
+  members.forEach((m) => {
+    (m.dislikes || []).forEach((d) => out.dislikes.add(d));
+    (m.allergies || []).forEach((a) => out.allergies.add(a));
+    (m.tastes || []).forEach((t) => out.tastes.add(t));
+  });
+  return out;
+}
+
+// 给单个菜谱打软提示标记：命中的忌口/过敏词 + 口味匹配数
+function annotate(recipe, prefs) {
+  const text = [
+    recipe.name,
+    ...(recipe.ingredients || []),
+    ...(recipe.tasteTags || []),
+    ...(recipe.nutritionTags || [])
+  ].join(' ');
+  const hit = (set) => [...set].filter((term) => term && text.includes(term));
+  const dislikeHits = hit(prefs.dislikes);
+  const allergyHits = hit(prefs.allergies);
+  const tasteMatch = (recipe.tasteTags || []).filter((t) => prefs.tastes.has(t)).length;
+  return {
+    ...recipe,
+    dislikeHits,
+    allergyHits,
+    conflicts: [...new Set([...dislikeHits, ...allergyHits])],
+    hasAllergy: allergyHits.length > 0,
+    tasteMatch
+  };
+}
+
 module.exports = async (req, res) => {
   const openid = req.openid;
   const { action } = req.body || {};
@@ -20,10 +55,17 @@ module.exports = async (req, res) => {
         if (req.body.cuisine) query.cuisine = req.body.cuisine;
         if (req.body.seasonTag) query.seasonTags = { $in: [req.body.seasonTag, '四季'] };
         if (req.body.tasteTag) query.tasteTags = req.body.tasteTag;
-        let recipes = await Recipe.find(query).limit(req.body.limit || 50);
+        let docs = await Recipe.find(query).limit(req.body.limit || 50);
         if (req.body.keyword) {
-          recipes = recipes.filter((r) => r.name.includes(req.body.keyword));
+          docs = docs.filter((r) => r.name.includes(req.body.keyword));
         }
+        // 软提示：标注全家忌口/过敏命中，并把「无冲突 + 口味匹配高」的排前面
+        const prefs = await familyPrefs(familyId);
+        let recipes = docs.map((r) => annotate(r.toObject(), prefs));
+        recipes.sort((a, b) => {
+          if (a.conflicts.length !== b.conflicts.length) return a.conflicts.length - b.conflicts.length;
+          return b.tasteMatch - a.tasteMatch;
+        });
         return ok(res, { recipes });
       }
 

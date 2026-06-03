@@ -6,7 +6,7 @@ const userSchema = new Schema({
   openid: { type: String, unique: true, index: true },
   nickname: { type: String, default: '家庭成员' },
   avatarUrl: { type: String, default: '' },
-  familyId: { type: String, default: '' },
+  familyId: { type: String, default: '', index: true },
   role: { type: String, default: '' },
   tastes: { type: [String], default: [] },
   dislikes: { type: [String], default: [] },

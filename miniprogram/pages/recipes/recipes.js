@@ -49,6 +49,20 @@ Page({
   },
 
   async addToMenu(recipe) {
+    // 软提示：命中过敏原时二次确认；忌口仅提示不拦截
+    if (recipe.hasAllergy) {
+      const confirmed = await new Promise((resolve) => {
+        wx.showModal({
+          title: '含过敏原',
+          content: `「${recipe.name}」含家人过敏原：${(recipe.allergyHits || []).join('、')}，仍要加入吗？`,
+          confirmText: '仍要加入',
+          confirmColor: '#e34d59',
+          success: (r) => resolve(r.confirm),
+          fail: () => resolve(false)
+        });
+      });
+      if (!confirmed) return;
+    }
     await callFunction('vote', {
       action: 'addItem', meal: this.data.meal,
       recipeId: recipe._id, name: recipe.name
