@@ -1,5 +1,16 @@
 # 部署与配置指南
 
+本项目有**两种可切换的后端**，由 `miniprogram/app.js` 的 `backend` 开关决定：
+
+- **方案 A · 微信云开发**（`backend: 'cloud'`）：本文第 1–8 节。无需服务器，最省事。
+- **方案 B · 自建后端**（`backend: 'server'`）：部署在自己的服务器（如阿里云），见 [第 9 节](#9-方案-b自建后端阿里云)，详细文档在 [`server/README.md`](../server/README.md)。
+
+两套后端接口完全一致，小程序页面代码无需改动；按需选其一即可。
+
+---
+
+# 方案 A · 微信云开发
+
 ## 1. 准备工作
 
 - 注册微信小程序账号，拿到 **AppID**（个人号即可，需能使用云开发）。
@@ -59,6 +70,57 @@
 
 编译预览 → 创建家庭 → 在「我的」里设置口味/忌口 → 把邀请码发给家人 →
 「点餐」加菜投票 → 「推荐」生成 AI 配菜 → 确定菜单后到「分析」查看饮食结构。
+
+---
+
+# 方案 B · 自建后端（阿里云）
+
+把云函数换成部署在自己服务器上的 Express + MongoDB 后端。完整文档（含环境变量获取、调试、排错）见 [`server/README.md`](../server/README.md)，这里给出主线步骤。
+
+## 9. 方案 B：自建后端（阿里云）
+
+### 9.1 前置条件
+
+- 一台已装 **Docker / docker compose** 的服务器（阿里云 ECS 等）。
+- 一个**已 ICP 备案**的域名（小程序只能请求 HTTPS 备案域名）。
+- 安全组放行 80、443。
+- 小程序的 **AppID + AppSecret**（公众平台「开发管理 → 开发设置 → 开发者ID」获取）与 **DeepSeek API Key**。
+  各凭证获取方式详见 [server/README.md「环境变量：含义与获取方式」](../server/README.md#环境变量含义与获取方式)。
+
+### 9.2 起服务（Docker）
+
+```bash
+git clone <仓库地址> && cd order_food/server
+cp .env.example .env && vim .env     # 填 JWT_SECRET / WX_APPID / WX_SECRET / DEEPSEEK_API_KEY，ALLOW_MOCK_LOGIN=false
+docker compose up -d --build         # 启动 app + mongo，自动导入种子数据(AUTO_SEED=true)
+docker compose ps                    # 两个容器均 running
+curl http://127.0.0.1:3000/health    # 返回 {"code":0,...}
+```
+
+> ⚠️ 不要在宿主机直接 `npm run seed/dev`——compose 内数据库主机名 `mongo` 仅容器网络可解析，宿主机直接跑会报 `ENOTFOUND mongo`。命令都用 `docker compose exec app ...`。
+
+### 9.3 配置 HTTPS（Nginx 反代）
+
+1. 申请该备案域名的 SSL 证书（阿里云免费 DV 证书或 certbot）。
+2. 参考 `server/deploy/nginx.conf.example` 配置反代到 `127.0.0.1:3000`，`nginx -t && nginx -s reload`。
+3. 浏览器访问 `https://你的域名/health` 应返回 `{"code":0,...}`。
+4. 在 **公众平台 → 开发管理 → 开发设置 → 服务器域名** 的 **request 合法域名** 添加 `https://你的域名`。
+
+### 9.4 切换小程序到自建后端
+
+编辑 `miniprogram/app.js`：
+
+```js
+backend: 'server',
+serverBaseUrl: 'https://你的域名'
+```
+
+重新编译上传即可。想切回云开发把 `backend` 改回 `'cloud'`。
+
+### 9.5 验证
+
+开发者工具里关闭域名校验后，用模拟器走一遍：创建家庭 → 设口味 → 点餐投票 → 定菜单 → AI 推荐/分析。
+或在服务器上临时设 `ALLOW_MOCK_LOGIN=true` 后跑 `docker compose exec app npm run smoke`（验证后改回 `false`）。
 
 ---
 

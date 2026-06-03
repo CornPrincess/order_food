@@ -7,6 +7,7 @@ module.exports = {
   wxAppId: process.env.WX_APPID || '',
   wxSecret: process.env.WX_SECRET || '',
   allowMockLogin: process.env.ALLOW_MOCK_LOGIN === 'true',
+  autoSeed: process.env.AUTO_SEED === 'true', // 启动时自动导入种子（幂等）
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY || '',
     baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',

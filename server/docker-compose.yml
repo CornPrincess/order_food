@@ -16,8 +16,10 @@ services:
     env_file:
       - .env
     environment:
-      # 覆盖 .env，确保容器内指向 mongo 服务名
+      # 覆盖 .env，确保容器内指向 mongo 服务名（宿主机无法解析 "mongo"）
       - MONGODB_URI=mongodb://mongo:27017/order_food
+      # 容器启动即自动导入种子数据（幂等），无需手动 npm run seed
+      - AUTO_SEED=true
     ports:
       - "3000:3000"
 
