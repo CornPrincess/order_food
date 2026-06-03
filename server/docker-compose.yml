@@ -19,8 +19,9 @@ services:
     env_file:
       - .env
     environment:
-      # 覆盖 .env，确保容器内指向 mongo 服务名
+      # 覆盖 .env，确保容器内指向 mongo 服务名（宿主机无法解析 "mongo"）
       - MONGODB_URI=mongodb://mongo:27017/order_food
+      - AUTO_SEED=true
     networks:
       # 与 mongo 通信
       - order_food_internal

@@ -206,6 +206,8 @@ DEEPSEEK_API_KEY=<你的 Key>
 # MONGODB_URI 不用改，compose 会覆盖为容器内 mongo 服务
 ```
 
+> ⚠️ **不要在宿主机上直接 `npm run seed` / `npm run dev`。** compose 里数据库主机名是 `mongo`，只在 Docker 网络内可解析；宿主机直接跑会报 `getaddrinfo ENOTFOUND mongo`。所有命令都通过 `docker compose ...` 在容器里执行。
+
 ### 3. 启动服务（app + mongo）
 
 ```bash
@@ -213,7 +215,11 @@ docker compose up -d --build
 docker compose ps           # 两个容器都应为 running
 ```
 
-### 4. 导入种子数据
+### 4. 种子数据（已自动导入）
+
+compose 中已设 `AUTO_SEED=true`，**应用启动时会自动幂等导入**种子菜谱与时令表，无需手动操作。可在日志里看到 `自动种子导入：...`。
+
+如需手动再跑一次（例如更新了种子数据）：
 
 ```bash
 docker compose exec app npm run seed
@@ -294,7 +300,8 @@ serverBaseUrl: 'https://你的域名'
 | 业务接口返回 401 | 没带 `Authorization: Bearer <token>`，或 token 过期（30 天）需重新登录 |
 | 接口返回 429 | 触发限流，调大 `.env` 里对应 `RATE_*` 或稍后重试 |
 | AI 接口报错「未配置 DEEPSEEK_API_KEY」/ 余额不足 | 填 Key 并在 DeepSeek 平台充值；非 AI 功能不受影响 |
-| 连不上数据库 / mongoose 超时 | 检查 `MONGODB_URI`；Docker 下应为 `mongodb://mongo:27017/...`，本地为 `localhost` |
+| `getaddrinfo ENOTFOUND mongo` | 在**宿主机**直接 `npm run` 但 `MONGODB_URI` 指向了 Docker 服务名 `mongo`。改用 `docker compose exec app ...` 在容器内跑，或把 `.env` 的 URI 改成 `localhost`（需本机有 MongoDB） |
+| 连不上数据库 / mongoose 超时 | 检查 `MONGODB_URI`；Docker 下应为 `mongodb://mongo:27017/...`，本地为 `localhost`，且对应 MongoDB 已启动 |
 | 小程序请求被拦截「不在以下 request 合法域名列表中」 | 在公众平台配置 request 合法域名；开发者工具可临时关闭域名校验 |
 | 真机打开报 SSL/证书错误 | 证书未正确安装或域名未备案；检查 `https://域名/health` 是否正常 |
 
