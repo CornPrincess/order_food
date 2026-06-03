@@ -7,10 +7,13 @@
         <view class="muted">共 {{members.length}} 位成员</view>
       </view>
       <view class="invite" bindtap="copyInvite">
-        <view class="muted">邀请码</view>
+        <view class="muted">邀请码（点击复制）</view>
         <view class="invite-code">{{family.inviteCode}}</view>
       </view>
     </view>
+    <button class="share-btn" open-type="share">
+      <text class="share-icon">📤</text> 分享给家人，一键加入
+    </button>
     <view class="members">
       <view class="member" wx:for="{{members}}" wx:key="openid">
         <view class="avatar">{{item.nickname[0] || '家'}}</view>
@@ -22,8 +25,17 @@
 
   <!-- 我的口味档案 -->
   <view class="card">
-    <view class="card-title">我的身份</view>
-    <input class="field" placeholder="例如：爸爸 / 妈妈 / 孩子" value="{{role}}" bindinput="onRole" />
+    <view class="card-title">我的昵称</view>
+    <input class="field" type="nickname" placeholder="点此使用微信昵称，或自行输入"
+      value="{{nickname}}" bindinput="onNickname" bindblur="onNickname" />
+
+    <view class="card-title mt">我的身份</view>
+    <view class="chips">
+      <view class="chip {{role===item?'on':''}}" wx:for="{{roleOptions}}" wx:key="*this"
+        data-role="{{item}}" bindtap="selectRole">{{item}}</view>
+    </view>
+    <input class="field mt-sm" placeholder="或自定义身份，如：外婆 / 室友"
+      value="{{customRole}}" bindinput="onCustomRole" />
 
     <view class="card-title mt">喜欢的口味</view>
     <view class="chips">

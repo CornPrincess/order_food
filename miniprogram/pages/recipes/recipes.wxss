@@ -26,3 +26,8 @@
 .recipe-cuisine { margin: 8rpx 0 16rpx; }
 .tags { display: flex; flex-wrap: wrap; }
 .ai-tag { background: #fff1e6; color: var(--warning); }
+
+.warn-line { display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 12rpx; }
+.warn { font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 8rpx; }
+.warn-allergy { background: #fdecee; color: #e34d59; }
+.warn-dislike { background: #fff1e6; color: var(--warning); }
