@@ -1,6 +1,6 @@
 // POST /api/recipes — 列表 / 详情 / 新增 / 种子初始化
-const { User, Recipe, SeasonalIngredient } = require('../models');
-const { RECIPES, SEASONAL } = require('../data/seedData');
+const { User, Recipe } = require('../models');
+const { runSeed } = require('../seedRunner');
 const { ok, fail } = require('../utils');
 
 async function getFamilyId(openid) {
@@ -52,22 +52,7 @@ module.exports = async (req, res) => {
       }
 
       case 'initSeed': {
-        let recipesInserted = 0;
-        for (const r of RECIPES) {
-          const exist = await Recipe.countDocuments({ name: r.name, familyId: '' });
-          if (exist === 0) {
-            await Recipe.create({ ...r, source: 'seed', familyId: '', createdBy: 'system' });
-            recipesInserted++;
-          }
-        }
-        let seasonalInserted = 0;
-        for (const s of SEASONAL) {
-          const exist = await SeasonalIngredient.countDocuments({ month: s.month });
-          if (exist === 0) {
-            await SeasonalIngredient.create(s);
-            seasonalInserted++;
-          }
-        }
+        const { recipesInserted, seasonalInserted } = await runSeed();
         return ok(res, { recipesInserted, seasonalInserted });
       }
 
