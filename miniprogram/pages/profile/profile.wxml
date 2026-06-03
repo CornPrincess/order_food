@@ -39,13 +39,13 @@
 
     <view class="card-title mt">喜欢的口味</view>
     <view class="chips">
-      <view class="chip {{tastes.includes(item)?'on':''}}" wx:for="{{tasteOptions}}" wx:key="*this"
+      <view class="chip {{tasteMap[item]?'on':''}}" wx:for="{{tasteOptions}}" wx:key="*this"
         data-v="{{item}}" bindtap="toggleTaste">{{item}}</view>
     </view>
 
     <view class="card-title mt">忌口（不爱吃）</view>
     <view class="chips">
-      <view class="chip {{dislikes.includes(item)?'on-warn':''}}" wx:for="{{dislikeOptions}}" wx:key="*this"
+      <view class="chip {{dislikeMap[item]?'on-warn':''}}" wx:for="{{dislikeOptions}}" wx:key="*this"
         data-v="{{item}}" bindtap="toggleDislike">{{item}}</view>
     </view>
 

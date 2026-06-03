@@ -2,8 +2,19 @@ const { callFunction } = require('../../utils/cloud');
 const { ensureLogin, refresh, getFamily, setUser } = require('../../utils/store');
 
 const TASTE_OPTIONS = ['咸鲜', '清淡', '酸辣', '麻辣', '酸甜', '咸甜', '微辣'];
-const DISLIKE_OPTIONS = ['香菜', '葱', '姜', '蒜', '辣', '内脏', '羊肉', '海鲜', '茄子', '苦瓜'];
+const DISLIKE_OPTIONS = ['香菜', '葱', '蒜', '辣', '内脏', '羊肉', '海鲜'];
 const ROLE_OPTIONS = ['爸爸', '妈妈', '儿子', '女儿', '爷爷', '奶奶', '我'];
+
+// 把已选数组转成 { 标签: true } 映射；WXML 不支持 .includes() 方法调用，
+// 必须用 map[item] 这种按 key 取值的形式来判断选中态。
+function toMap(arr) {
+  const m = {};
+  (arr || []).forEach((v) => { m[v] = true; });
+  return m;
+}
+function selectedKeys(map) {
+  return Object.keys(map || {}).filter((k) => map[k]);
+}
 
 Page({
   data: {
@@ -13,8 +24,8 @@ Page({
     tasteOptions: TASTE_OPTIONS,
     dislikeOptions: DISLIKE_OPTIONS,
     roleOptions: ROLE_OPTIONS,
-    tastes: [],
-    dislikes: [],
+    tasteMap: {},
+    dislikeMap: {},
     allergies: '',
     nickname: '',
     role: '',
@@ -32,8 +43,8 @@ Page({
     this.setData({
       user,
       family: getFamily(),
-      tastes: user.tastes || [],
-      dislikes: user.dislikes || [],
+      tasteMap: toMap(user.tastes),
+      dislikeMap: toMap(user.dislikes),
       allergies: (user.allergies || []).join('、'),
       nickname: user.nickname && user.nickname !== '家庭成员' ? user.nickname : '',
       // 角色命中预设则高亮预设，否则填入自定义框
@@ -56,17 +67,11 @@ Page({
 
   toggleTaste(e) {
     const v = e.currentTarget.dataset.v;
-    const tastes = this.data.tastes.includes(v)
-      ? this.data.tastes.filter((t) => t !== v)
-      : [...this.data.tastes, v];
-    this.setData({ tastes });
+    this.setData({ [`tasteMap.${v}`]: !this.data.tasteMap[v] });
   },
   toggleDislike(e) {
     const v = e.currentTarget.dataset.v;
-    const dislikes = this.data.dislikes.includes(v)
-      ? this.data.dislikes.filter((t) => t !== v)
-      : [...this.data.dislikes, v];
-    this.setData({ dislikes });
+    this.setData({ [`dislikeMap.${v}`]: !this.data.dislikeMap[v] });
   },
   onAllergies(e) { this.setData({ allergies: e.detail.value }); },
 
@@ -79,8 +84,8 @@ Page({
     const payload = {
       action: 'updateProfile',
       role,
-      tastes: this.data.tastes,
-      dislikes: this.data.dislikes,
+      tastes: selectedKeys(this.data.tasteMap),
+      dislikes: selectedKeys(this.data.dislikeMap),
       allergies
     };
     if (nickname) payload.nickname = nickname;
