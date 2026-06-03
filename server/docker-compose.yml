@@ -4,12 +4,15 @@ services:
     restart: always
     volumes:
       - mongo_data:/data/db
+    networks:
+      - order_food_internal
     # 默认不对外暴露端口，仅容器网络内访问。如需本机连库可解开下面两行：
     # ports:
     #   - "27017:27017"
 
   app:
     build: .
+    container_name: order_food_app
     restart: always
     depends_on:
       - mongo
@@ -18,8 +21,25 @@ services:
     environment:
       # 覆盖 .env，确保容器内指向 mongo 服务名
       - MONGODB_URI=mongodb://mongo:27017/order_food
-    ports:
-      - "3000:3000"
+    networks:
+      # 与 mongo 通信
+      - order_food_internal
+      # 与 cc_blog 的 nginx 通信（由 cc_blog 那套 compose 创建的外部网络）
+      - cc_blog_internal
+    # 不再对外暴露 3000：流量统一经 cc_blog_nginx 反代进来。
+    # 如需本机直连调试，可临时解开下面两行：
+    # ports:
+    #   - "3000:3000"
 
 volumes:
   mongo_data:
+
+networks:
+  order_food_internal:
+    driver: bridge
+  # cc_blog 的 docker-compose.prod.yml 启动时创建的网络。
+  # 用 `docker network ls | grep internal` 确认真实名字（compose 项目名_internal，
+  # 默认目录名为 cc_blog 时即 cc_blog_internal），如不同请改 name 字段。
+  cc_blog_internal:
+    external: true
+    name: cc_blog_internal
