@@ -35,19 +35,32 @@ docker compose up -d --build
 docker compose exec app wget -qO- http://localhost:3000/health   # 自检
 ```
 
-### 3. 单独签发 food.bbmmcc.cn 证书（用现有 certbot 容器，一次性）
+### 3. 把 food.bbmmcc.cn 扩展进现有 bbmmcc.cn 证书（同主域，复用一张证书）
+
+food.bbmmcc.cn 与博客同属 `bbmmcc.cn` 主域，现有证书已覆盖
+`bbmmcc.cn / api.bbmmcc.cn / media.bbmmcc.cn`。直接 `--expand` 把 food
+加进这张已经在正常工作的证书，走的是已验证可用的签发路径：
 
 ```bash
+# 先清掉之前失败尝试可能残留的 food 续签配置（没有则忽略报错）
+docker exec cc_blog_certbot certbot delete --cert-name food.bbmmcc.cn --non-interactive 2>/dev/null || true
+
+# 扩展现有 bbmmcc.cn 证书，列出全部 SAN + 新增 food
 docker exec -it cc_blog_certbot certbot certonly \
   --authenticator dns-aliyun \
   --dns-aliyun-credentials /etc/certbot/aliyun.ini \
   --dns-aliyun-propagation-seconds 60 \
-  -d food.bbmmcc.cn \
-  --non-interactive --agree-tos -m <你的邮箱> --no-eff-email
+  --cert-name bbmmcc.cn \
+  -d bbmmcc.cn -d api.bbmmcc.cn -d media.bbmmcc.cn -d food.bbmmcc.cn \
+  --non-interactive --agree-tos -m xiaocorn96@gmail.com --no-eff-email --expand
 ```
 
-证书写入共享 volume `certbot_certs`，nginx 已只读挂载；续签由 certbot 的
-`certbot renew` 循环自动覆盖，无需额外配置。
+证书仍在 `/etc/letsencrypt/live/bbmmcc.cn/`，nginx 已只读挂载该 volume；
+续签由 certbot 的 `certbot renew` 循环按存储的 4 个域名自动续，无需额外配置。
+
+> 注：不建议为 food 单独 `certonly -d food.bbmmcc.cn` 新建独立证书——实测会偶发
+> ACME 端 `No such authorization`（新建订单后 authz 取回 404，Boulder 瞬时不一致）。
+> 若坚持独立证书，遇到该错误重试 2~3 次即可，但同主域用一张证书更省心。
 
 ### 4. 加载 nginx 路由（food.conf.template 已在 cc_blog/nginx/templates/）
 
