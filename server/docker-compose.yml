@@ -6,7 +6,7 @@ services:
       - mongo_data:/data/db
     # 默认不对外暴露端口，仅容器网络内访问。如需本机连库可解开下面两行：
     # ports:
-    #   - "27017:27017"
+    #   - "127.0.0.1:27017:27017"
 
   app:
     build: .
@@ -20,8 +20,22 @@ services:
       - MONGODB_URI=mongodb://mongo:27017/order_food
       # 容器启动即自动导入种子数据（幂等），无需手动 npm run seed
       - AUTO_SEED=true
+    # 仅绑定到本机回环，便于在服务器上调试，不直接对公网暴露（公网走 nginx）
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
+      - ./deploy/nginx/certbot:/var/www/certbot:ro
 
 volumes:
   mongo_data:

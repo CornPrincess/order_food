@@ -208,64 +208,118 @@ DEEPSEEK_API_KEY=<你的 Key>
 
 > ⚠️ **不要在宿主机上直接 `npm run seed` / `npm run dev`。** compose 里数据库主机名是 `mongo`，只在 Docker 网络内可解析；宿主机直接跑会报 `getaddrinfo ENOTFOUND mongo`。所有命令都通过 `docker compose ...` 在容器里执行。
 
-### 3. 启动服务（app + mongo）
+### 3. 准备 HTTPS 证书
+
+`docker compose` 里已内置 **nginx** 服务（含本仓库 `deploy/nginx/conf.d/food.bbmmcc.cn.conf`），它把 `443` 反代到后端 `app:3000`。启动前需先把证书放到挂载目录 `deploy/nginx/ssl/`，文件名固定为：
+
+```
+deploy/nginx/ssl/food.bbmmcc.cn.pem    # 证书（fullchain）
+deploy/nginx/ssl/food.bbmmcc.cn.key    # 私钥
+```
+
+> 换其它域名：把 `deploy/nginx/conf.d/food.bbmmcc.cn.conf` 里的 `server_name` 和证书文件名一并改掉。
+
+三选一获取证书：
+
+- **阿里云免费证书（最简单，推荐）**：阿里云控制台「数字证书管理服务」申请免费 DV 证书 → 下载 **Nginx 格式** → 把 `.pem`、`.key` 重命名为上面两个文件名放进 `deploy/nginx/ssl/`。
+- **Let's Encrypt 自动签发**：先确保域名已解析到本机公网 IP，用脚本一键签发（见 [Let's Encrypt 签发](#letsencrypt-签发)）。
+- **先用自签证书把服务跑起来**（仅测试，小程序不接受）：`bash deploy/gen-selfsigned.sh food.bbmmcc.cn`
+
+### 4. 一键启动（mongo + app + nginx）
 
 ```bash
 docker compose up -d --build
-docker compose ps           # 两个容器都应为 running
+docker compose ps          # mongo / app / nginx 三个容器都应 running
 ```
 
-### 4. 种子数据（已自动导入）
+- `AUTO_SEED=true` 已在 compose 中开启，**app 启动时自动幂等导入**种子菜谱与时令表（日志可见 `自动种子导入：...`）。
+- 验证：
+  ```bash
+  curl http://127.0.0.1:3000/health         # 后端本机直连
+  curl -k https://food.bbmmcc.cn/health     # 经 nginx 的 HTTPS（-k 容忍自签证书）
+  ```
 
-compose 中已设 `AUTO_SEED=true`，**应用启动时会自动幂等导入**种子菜谱与时令表，无需手动操作。可在日志里看到 `自动种子导入：...`。
+### 5. 配置微信合法域名
 
-如需手动再跑一次（例如更新了种子数据）：
+**微信公众平台 → 开发管理 → 开发设置 → 服务器域名**，在 **request 合法域名** 添加 `https://food.bbmmcc.cn`。
 
-```bash
-docker compose exec app npm run seed
-```
-
-### 5. 健康检查与日志
-
-```bash
-curl http://127.0.0.1:3000/health        # {"code":0,...}
-docker compose logs -f app                # 实时查看访问日志
-```
-
-### 常用运维命令
+### 6. 常用运维命令
 
 ```bash
+docker compose logs -f app                # 应用访问日志
+docker compose logs -f nginx              # nginx 日志
 docker compose restart app                # 重启应用
+docker compose restart nginx              # 改完 nginx 配置后重启
 docker compose down                       # 停止（数据保留在卷 mongo_data）
 docker compose up -d --build              # 改代码/依赖后重新构建上线
 docker compose exec mongo mongosh order_food   # 进数据库
 ```
 
+<a id="letsencrypt-签发"></a>
+### Let's Encrypt 签发（可选）
+
+域名已解析到本机、且 nginx 已起（80 端口可访问）后：
+
+```bash
+# 首次若还没有任何证书，nginx 的 443 会起不来——先生成自签让它能启动
+bash deploy/gen-selfsigned.sh food.bbmmcc.cn
+docker compose up -d
+
+# 再用 certbot 签发正式证书并自动重载 nginx
+bash deploy/issue-cert.sh food.bbmmcc.cn 你的邮箱@example.com
+```
+
+脚本会把证书写入 `deploy/nginx/ssl/`，并 `nginx -s reload`。续期可加 crontab 定期重跑该脚本。
+
 ---
 
-## 配置 HTTPS
+## Docker 环境下调试
 
-小程序只能请求 **HTTPS + 备案域名**。用 Nginx 反向代理到本机 `3000`。
+容器化后，**不要在宿主机直接 `npm run ...`**（会报 `ENOTFOUND mongo`）。调试都进容器或看容器日志：
 
-1. 为域名申请 SSL 证书：阿里云控制台「数字证书管理服务」可领**免费 DV 证书**，或用 `certbot`。
-2. 把证书放到服务器（如 `/etc/nginx/ssl/`），参考本仓库 `deploy/nginx.conf.example` 配置：
-   ```bash
-   cp deploy/nginx.conf.example /etc/nginx/conf.d/order_food.conf
-   vim /etc/nginx/conf.d/order_food.conf   # 替换域名与证书路径
-   nginx -t && nginx -s reload
-   ```
-3. 验证：浏览器访问 `https://你的域名/health` 返回 `{"code":0,...}`。
-4. 在 **微信公众平台 → 开发管理 → 开发设置 → 服务器域名** 的 **request 合法域名** 添加 `https://你的域名`。
+```bash
+# 1. 看服务是否都起来了
+docker compose ps
+
+# 2. 实时日志（含每条请求 IP/openid/状态码/耗时）
+docker compose logs -f app
+docker compose logs --tail=100 nginx
+
+# 3. 进 app 容器执行命令（种子、冒烟测试等）
+docker compose exec app sh
+docker compose exec app npm run seed           # 手动重导种子
+docker compose exec app node -e "console.log(process.env.MONGODB_URI)"  # 确认环境变量
+
+# 4. 容器内冒烟测试（需临时把 .env 的 ALLOW_MOCK_LOGIN 设为 true 并重启 app）
+docker compose exec app npm run smoke          # 默认打 http://127.0.0.1:3000
+
+# 5. 直接连库查数据
+docker compose exec mongo mongosh order_food --eval "db.recipes.countDocuments()"
+docker compose exec mongo mongosh order_food --eval "db.users.find().limit(3)"
+
+# 6. 验证 nginx 配置语法 / 重载
+docker compose exec nginx nginx -t
+docker compose exec nginx nginx -s reload
+
+# 7. 改了 .env 后让 app 重新加载（env 在启动时读取）
+docker compose up -d app
+```
+
+排错口诀：**先 `docker compose ps` 看谁没起，再 `logs` 看它为什么没起。**
+
+- `app` 反复重启 → 多半是连不上库或 `.env` 缺关键项，看 `docker compose logs app`。
+- `nginx` 起不来 → 多半是证书文件缺失/路径不符，看 `docker compose logs nginx`，确认 `deploy/nginx/ssl/` 下有对应 `.pem`/`.key`。
+- 外网访问不通但本机 `curl 127.0.0.1:3000/health` 正常 → 检查安全组 80/443 与 nginx 容器端口映射。
 
 ---
 
 ## 把小程序切到自建后端
 
-编辑 `miniprogram/app.js`：
+编辑 `miniprogram/app.js`（`serverBaseUrl` 已预填为 `https://food.bbmmcc.cn`）：
 
 ```js
 backend: 'server',
-serverBaseUrl: 'https://你的域名'
+serverBaseUrl: 'https://food.bbmmcc.cn'
 ```
 
 重新编译、上传体验版即可。想切回微信云开发，把 `backend` 改回 `'cloud'`。两套后端接口完全一致，页面代码无需改动。

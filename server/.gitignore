@@ -1,3 +1,11 @@
 node_modules/
 .env
 *.log
+
+# 证书与 ACME 中间文件（不要提交）
+deploy/nginx/ssl/*.pem
+deploy/nginx/ssl/*.key
+deploy/nginx/letsencrypt/
+deploy/nginx/certbot/*
+!deploy/nginx/certbot/.gitkeep
+!deploy/nginx/ssl/.gitkeep

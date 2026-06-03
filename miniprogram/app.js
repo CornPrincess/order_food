@@ -10,7 +10,7 @@ App({
 
     // —— 自建后端模式配置 ——
     // 必须是已 ICP 备案 + HTTPS 的域名，并在小程序后台「服务器域名」中配置
-    serverBaseUrl: 'https://your-domain.com',
+    serverBaseUrl: 'https://food.bbmmcc.cn',
 
     userInfo: null,   // 当前登录用户（含 familyId、role、口味等）
     family: null      // 当前家庭信息

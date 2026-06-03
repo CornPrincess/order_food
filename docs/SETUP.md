@@ -87,32 +87,41 @@
 - 小程序的 **AppID + AppSecret**（公众平台「开发管理 → 开发设置 → 开发者ID」获取）与 **DeepSeek API Key**。
   各凭证获取方式详见 [server/README.md「环境变量：含义与获取方式」](../server/README.md#环境变量含义与获取方式)。
 
-### 9.2 起服务（Docker）
+### 9.2 准备证书 + 一键起服务（Docker）
+
+`docker compose` 已内置 **mongo + app + nginx** 三件套，nginx 自带 `food.bbmmcc.cn` 的反代配置并终止 HTTPS，一条命令即可全部拉起。
 
 ```bash
 git clone <仓库地址> && cd order_food/server
 cp .env.example .env && vim .env     # 填 JWT_SECRET / WX_APPID / WX_SECRET / DEEPSEEK_API_KEY，ALLOW_MOCK_LOGIN=false
-docker compose up -d --build         # 启动 app + mongo，自动导入种子数据(AUTO_SEED=true)
-docker compose ps                    # 两个容器均 running
-curl http://127.0.0.1:3000/health    # 返回 {"code":0,...}
+
+# 放置证书（nginx 的 443 需要）：把证书命名为下面两个文件放进 deploy/nginx/ssl/
+#   deploy/nginx/ssl/food.bbmmcc.cn.pem   (证书 fullchain)
+#   deploy/nginx/ssl/food.bbmmcc.cn.key   (私钥)
+# 阿里云免费 DV 证书下载 Nginx 格式重命名即可；或先自签让服务起来：
+#   bash deploy/gen-selfsigned.sh food.bbmmcc.cn
+
+docker compose up -d --build         # 启动 mongo + app + nginx，自动导入种子(AUTO_SEED=true)
+docker compose ps                    # 三个容器均 running
+curl http://127.0.0.1:3000/health        # 后端本机直连
+curl -k https://food.bbmmcc.cn/health    # 经 nginx 的 HTTPS
 ```
 
-> ⚠️ 不要在宿主机直接 `npm run seed/dev`——compose 内数据库主机名 `mongo` 仅容器网络可解析，宿主机直接跑会报 `ENOTFOUND mongo`。命令都用 `docker compose exec app ...`。
+> ⚠️ 不要在宿主机直接 `npm run seed/dev`——compose 内数据库主机名 `mongo` 仅容器网络可解析，宿主机直接跑会报 `ENOTFOUND mongo`。调试命令都用 `docker compose exec app ...`（详见 server/README「Docker 环境下调试」）。
+>
+> 用 Let's Encrypt 自动签发：`bash deploy/issue-cert.sh food.bbmmcc.cn 你的邮箱`（域名需已解析到本机、nginx 已起）。
 
-### 9.3 配置 HTTPS（Nginx 反代）
+### 9.3 配置微信合法域名
 
-1. 申请该备案域名的 SSL 证书（阿里云免费 DV 证书或 certbot）。
-2. 参考 `server/deploy/nginx.conf.example` 配置反代到 `127.0.0.1:3000`，`nginx -t && nginx -s reload`。
-3. 浏览器访问 `https://你的域名/health` 应返回 `{"code":0,...}`。
-4. 在 **公众平台 → 开发管理 → 开发设置 → 服务器域名** 的 **request 合法域名** 添加 `https://你的域名`。
+在 **公众平台 → 开发管理 → 开发设置 → 服务器域名** 的 **request 合法域名** 添加 `https://food.bbmmcc.cn`。
 
 ### 9.4 切换小程序到自建后端
 
-编辑 `miniprogram/app.js`：
+编辑 `miniprogram/app.js`（`serverBaseUrl` 已预填为 `https://food.bbmmcc.cn`，只需把 `backend` 改成 `server`）：
 
 ```js
 backend: 'server',
-serverBaseUrl: 'https://你的域名'
+serverBaseUrl: 'https://food.bbmmcc.cn'
 ```
 
 重新编译上传即可。想切回云开发把 `backend` 改回 `'cloud'`。
