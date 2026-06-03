@@ -10,6 +10,7 @@ services:
 
   app:
     build: .
+    container_name: order_food_app   # 固定容器名，便于已有反代按名访问（共享网络时）
     restart: always
     depends_on:
       - mongo
@@ -24,9 +25,12 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
 
+  # nginx + certbot 仅在「整机独占部署」时启用：docker compose --profile standalone up -d
+  # 若本机已有反向代理（例如同机的 cc_blog 的 nginx），不要启用本服务，避免抢占 80/443。
   nginx:
     image: nginx:1.27-alpine
     restart: always
+    profiles: ["standalone"]
     depends_on:
       - app
     ports:
@@ -34,8 +38,20 @@ services:
       - "443:443"
     volumes:
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
-      - ./deploy/nginx/certbot:/var/www/certbot:ro
+      - ./deploy/certbot/conf:/etc/letsencrypt:ro      # 证书（与 certbot 共享）
+      - ./deploy/certbot/www:/var/www/certbot:ro       # ACME 验证目录
+    # 每 6 小时 reload 一次，自动加载续期后的新证书；前台运行 nginx
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    image: certbot/certbot
+    restart: always
+    profiles: ["standalone"]
+    volumes:
+      - ./deploy/certbot/conf:/etc/letsencrypt
+      - ./deploy/certbot/www:/var/www/certbot
+    # 每 12 小时尝试续期一次（未到期则跳过）
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   mongo_data:

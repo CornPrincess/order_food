@@ -87,35 +87,35 @@
 - 小程序的 **AppID + AppSecret**（公众平台「开发管理 → 开发设置 → 开发者ID」获取）与 **DeepSeek API Key**。
   各凭证获取方式详见 [server/README.md「环境变量：含义与获取方式」](../server/README.md#环境变量含义与获取方式)。
 
-### 9.2 准备证书 + 一键起服务（Docker）
+### 9.2 起后端服务（Docker）
 
-`docker compose` 已内置 **mongo + app + nginx** 三件套，nginx 自带 `food.bbmmcc.cn` 的反代配置并终止 HTTPS，一条命令即可全部拉起。
+默认只跑 `mongo + app`（app 绑 `127.0.0.1:3000`），HTTPS 交给反向代理（见 9.3）。
 
 ```bash
 git clone <仓库地址> && cd order_food/server
 cp .env.example .env && vim .env     # 填 JWT_SECRET / WX_APPID / WX_SECRET / DEEPSEEK_API_KEY，ALLOW_MOCK_LOGIN=false
-
-# 放置证书（nginx 的 443 需要）：把证书命名为下面两个文件放进 deploy/nginx/ssl/
-#   deploy/nginx/ssl/food.bbmmcc.cn.pem   (证书 fullchain)
-#   deploy/nginx/ssl/food.bbmmcc.cn.key   (私钥)
-# 阿里云免费 DV 证书下载 Nginx 格式重命名即可；或先自签让服务起来：
-#   bash deploy/gen-selfsigned.sh food.bbmmcc.cn
-
-docker compose up -d --build         # 启动 mongo + app + nginx，自动导入种子(AUTO_SEED=true)
-docker compose ps                    # 三个容器均 running
-curl http://127.0.0.1:3000/health        # 后端本机直连
-curl -k https://food.bbmmcc.cn/health    # 经 nginx 的 HTTPS
+docker compose up -d --build         # 启动 mongo + app，自动导入种子(AUTO_SEED=true)
+docker compose ps                    # mongo / order_food_app 均 running
+curl http://127.0.0.1:3000/health    # {"code":0,...}
 ```
 
 > ⚠️ 不要在宿主机直接 `npm run seed/dev`——compose 内数据库主机名 `mongo` 仅容器网络可解析，宿主机直接跑会报 `ENOTFOUND mongo`。调试命令都用 `docker compose exec app ...`（详见 server/README「Docker 环境下调试」）。
->
-> 用 Let's Encrypt 自动签发：`bash deploy/issue-cert.sh food.bbmmcc.cn 你的邮箱`（域名需已解析到本机、nginx 已起）。
 
-### 9.3 配置微信合法域名
+### 9.3 暴露 HTTPS（二选一）
+
+- **本机已有 nginx（如同机的 cc_blog）→ 复用它（推荐）**：在已有 nginx 的 `conf.d` 加一个 `food.bbmmcc.cn` 的 server 块反代到 `127.0.0.1:3000`（或共享网络后用 `order_food_app:3000`），并把该域名加进它的 certbot 一起签发。**不要**再起第二个 nginx。配置片段与 bridge 共享网络做法见 [server/README.md「暴露到公网 HTTPS」](../server/README.md#4-暴露到公网-https二选一)。
+- **整机独占（本机没有别的反代）→ 用自带的 nginx+certbot**：
+  ```bash
+  bash deploy/init-letsencrypt.sh                          # 首次签发证书(编辑脚本顶部 EMAIL)
+  docker compose --profile standalone up -d --build        # 额外起 nginx + certbot(占用 80/443，自动续期)
+  curl https://food.bbmmcc.cn/health
+  ```
+
+### 9.4 配置微信合法域名
 
 在 **公众平台 → 开发管理 → 开发设置 → 服务器域名** 的 **request 合法域名** 添加 `https://food.bbmmcc.cn`。
 
-### 9.4 切换小程序到自建后端
+### 9.5 切换小程序到自建后端
 
 编辑 `miniprogram/app.js`（`serverBaseUrl` 已预填为 `https://food.bbmmcc.cn`，只需把 `backend` 改成 `server`）：
 
@@ -126,7 +126,7 @@ serverBaseUrl: 'https://food.bbmmcc.cn'
 
 重新编译上传即可。想切回云开发把 `backend` 改回 `'cloud'`。
 
-### 9.5 验证
+### 9.6 验证
 
 开发者工具里关闭域名校验后，用模拟器走一遍：创建家庭 → 设口味 → 点餐投票 → 定菜单 → AI 推荐/分析。
 或在服务器上临时设 `ALLOW_MOCK_LOGIN=true` 后跑 `docker compose exec app npm run smoke`（验证后改回 `false`）。

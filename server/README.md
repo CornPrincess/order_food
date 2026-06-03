@@ -208,36 +208,71 @@ DEEPSEEK_API_KEY=<你的 Key>
 
 > ⚠️ **不要在宿主机上直接 `npm run seed` / `npm run dev`。** compose 里数据库主机名是 `mongo`，只在 Docker 网络内可解析；宿主机直接跑会报 `getaddrinfo ENOTFOUND mongo`。所有命令都通过 `docker compose ...` 在容器里执行。
 
-### 3. 准备 HTTPS 证书
+### 3. 启动后端（mongo + app）
 
-`docker compose` 里已内置 **nginx** 服务（含本仓库 `deploy/nginx/conf.d/food.bbmmcc.cn.conf`），它把 `443` 反代到后端 `app:3000`。启动前需先把证书放到挂载目录 `deploy/nginx/ssl/`，文件名固定为：
-
-```
-deploy/nginx/ssl/food.bbmmcc.cn.pem    # 证书（fullchain）
-deploy/nginx/ssl/food.bbmmcc.cn.key    # 私钥
-```
-
-> 换其它域名：把 `deploy/nginx/conf.d/food.bbmmcc.cn.conf` 里的 `server_name` 和证书文件名一并改掉。
-
-三选一获取证书：
-
-- **阿里云免费证书（最简单，推荐）**：阿里云控制台「数字证书管理服务」申请免费 DV 证书 → 下载 **Nginx 格式** → 把 `.pem`、`.key` 重命名为上面两个文件名放进 `deploy/nginx/ssl/`。
-- **Let's Encrypt 自动签发**：先确保域名已解析到本机公网 IP，用脚本一键签发（见 [Let's Encrypt 签发](#letsencrypt-签发)）。
-- **先用自签证书把服务跑起来**（仅测试，小程序不接受）：`bash deploy/gen-selfsigned.sh food.bbmmcc.cn`
-
-### 4. 一键启动（mongo + app + nginx）
+默认只跑 `mongo + app`，**不**带 nginx/certbot——HTTPS 由一个反向代理来终止（见第 4 步）。app 仅绑定 `127.0.0.1:3000`，等待被反代。
 
 ```bash
 docker compose up -d --build
-docker compose ps          # mongo / app / nginx 三个容器都应 running
+docker compose ps                  # mongo / order_food_app 两个容器 running
+curl http://127.0.0.1:3000/health  # {"code":0,...}
 ```
 
-- `AUTO_SEED=true` 已在 compose 中开启，**app 启动时自动幂等导入**种子菜谱与时令表（日志可见 `自动种子导入：...`）。
-- 验证：
-  ```bash
-  curl http://127.0.0.1:3000/health         # 后端本机直连
-  curl -k https://food.bbmmcc.cn/health     # 经 nginx 的 HTTPS（-k 容忍自签证书）
-  ```
+`AUTO_SEED=true` 已开启，app 启动时自动幂等导入种子（日志可见 `自动种子导入：...`）。
+
+### 4. 暴露到公网 HTTPS（二选一）
+
+#### 方式 A（推荐）：接入本机已有的 nginx —— 比如同机的 cc_blog
+
+当本机已有别的项目（如 [cc_blog](https://github.com/CornPrincess/cc_blog)）的 nginx 占用了 80/443 时，**复用它，不要再起第二个 nginx**（否则 `port is already allocated`）。
+
+1. 在已有 nginx 的 `conf.d` 里新增一个 server 块（示例如下），反代 `food.bbmmcc.cn` 到 order_food 的 app。`proxy_pass` 目标取决于该 nginx 的网络模式：
+   - **host 网络**：`proxy_pass http://127.0.0.1:3000;`（app 已绑 127.0.0.1:3000，开箱即用）
+   - **bridge 容器**：让它和 app 共享一个 docker 网络后按容器名访问 `proxy_pass http://order_food_app:3000;`（见 [与已有反代共享网络](#与已有反代共享网络)）
+2. 证书：把 `food.bbmmcc.cn` 加进该 nginx 所用 certbot 的域名清单，一起签发/续期（cc_blog 已有 certbot，复用即可）。
+
+```nginx
+# 放进已有 nginx 的 conf.d/food.bbmmcc.cn.conf
+server {
+    listen 80;
+    server_name food.bbmmcc.cn;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }   # 路径按已有 certbot 的 webroot
+    location / { return 301 https://$host$request_uri; }
+}
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name food.bbmmcc.cn;
+    ssl_certificate     /etc/letsencrypt/live/food.bbmmcc.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/food.bbmmcc.cn/privkey.pem;
+    location / {
+        proxy_pass http://127.0.0.1:3000;          # bridge 容器改为 http://order_food_app:3000;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;                     # AI 接口耗时较长
+    }
+}
+```
+
+> 这种方式下 order_food 自己的 nginx/certbot **不启用**（默认就不会启动）。
+
+#### 方式 B：整机独占 —— 用本项目自带的 nginx + certbot
+
+本机没有别的反代时，可一键带起内置 nginx + certbot（`standalone` profile，会占用 80/443）：
+
+```bash
+# 1. 首次签发证书（域名已解析到本机、80 端口可访问）。先编辑脚本顶部的 EMAIL/STAGING
+bash deploy/init-letsencrypt.sh
+# 2. 启动全部（含 nginx + certbot）
+docker compose --profile standalone up -d --build
+curl https://food.bbmmcc.cn/health
+```
+
+- 内置站点配置 `deploy/nginx/conf.d/food.bbmmcc.cn.conf` 反代 `app:3000` 并终止 HTTPS。
+- certbot 服务每 12h 自动续期，nginx 每 6h 自动 reload 加载新证书。
+- ⚠️ 该 profile 占用 80/443，**与本机其它 nginx 冲突**，仅整机独占时使用。
 
 ### 5. 配置微信合法域名
 
@@ -246,30 +281,28 @@ docker compose ps          # mongo / app / nginx 三个容器都应 running
 ### 6. 常用运维命令
 
 ```bash
-docker compose logs -f app                # 应用访问日志
-docker compose logs -f nginx              # nginx 日志
-docker compose restart app                # 重启应用
-docker compose restart nginx              # 改完 nginx 配置后重启
-docker compose down                       # 停止（数据保留在卷 mongo_data）
-docker compose up -d --build              # 改代码/依赖后重新构建上线
-docker compose exec mongo mongosh order_food   # 进数据库
+docker compose logs -f app                       # 应用访问日志
+docker compose restart app                       # 重启应用
+docker compose down                              # 停止（数据保留在卷 mongo_data）
+docker compose up -d --build                     # 改代码/依赖后重新构建上线
+docker compose exec mongo mongosh order_food     # 进数据库
+# standalone 模式下才有 nginx/certbot：
+docker compose --profile standalone logs -f nginx
+docker compose --profile standalone restart nginx
 ```
 
-<a id="letsencrypt-签发"></a>
-### Let's Encrypt 签发（可选）
+<a id="与已有反代共享网络"></a>
+### 与已有反代共享网络（bridge 情况）
 
-域名已解析到本机、且 nginx 已起（80 端口可访问）后：
+已有 nginx 是普通桥接容器时，它访问不到宿主机 `127.0.0.1:3000`，需与 app 进同一 docker 网络后按容器名访问：
 
 ```bash
-# 首次若还没有任何证书，nginx 的 443 会起不来——先生成自签让它能启动
-bash deploy/gen-selfsigned.sh food.bbmmcc.cn
-docker compose up -d
-
-# 再用 certbot 签发正式证书并自动重载 nginx
-bash deploy/issue-cert.sh food.bbmmcc.cn 你的邮箱@example.com
+docker network create web 2>/dev/null || true
+docker network connect web order_food_app          # app 容器名已固定为 order_food_app
+docker network connect web <cc_blog 的 nginx 容器名>   # docker ps 查看实际名字
+# 然后在该 nginx 配置里：proxy_pass http://order_food_app:3000;
+docker exec <cc_blog 的 nginx 容器名> nginx -s reload
 ```
-
-脚本会把证书写入 `deploy/nginx/ssl/`，并 `nginx -s reload`。续期可加 crontab 定期重跑该脚本。
 
 ---
 
@@ -283,7 +316,7 @@ docker compose ps
 
 # 2. 实时日志（含每条请求 IP/openid/状态码/耗时）
 docker compose logs -f app
-docker compose logs --tail=100 nginx
+# nginx 仅 standalone 模式存在：docker compose --profile standalone logs --tail=100 nginx
 
 # 3. 进 app 容器执行命令（种子、冒烟测试等）
 docker compose exec app sh
@@ -297,19 +330,19 @@ docker compose exec app npm run smoke          # 默认打 http://127.0.0.1:3000
 docker compose exec mongo mongosh order_food --eval "db.recipes.countDocuments()"
 docker compose exec mongo mongosh order_food --eval "db.users.find().limit(3)"
 
-# 6. 验证 nginx 配置语法 / 重载
-docker compose exec nginx nginx -t
-docker compose exec nginx nginx -s reload
-
-# 7. 改了 .env 后让 app 重新加载（env 在启动时读取）
+# 6. 改了 .env 后让 app 重新加载（env 在启动时读取）
 docker compose up -d app
+
+# 7. standalone 模式下校验/重载 nginx
+docker compose --profile standalone exec nginx nginx -t
+docker compose --profile standalone exec nginx nginx -s reload
 ```
 
 排错口诀：**先 `docker compose ps` 看谁没起，再 `logs` 看它为什么没起。**
 
 - `app` 反复重启 → 多半是连不上库或 `.env` 缺关键项，看 `docker compose logs app`。
-- `nginx` 起不来 → 多半是证书文件缺失/路径不符，看 `docker compose logs nginx`，确认 `deploy/nginx/ssl/` 下有对应 `.pem`/`.key`。
-- 外网访问不通但本机 `curl 127.0.0.1:3000/health` 正常 → 检查安全组 80/443 与 nginx 容器端口映射。
+- 外网访问不通但本机 `curl 127.0.0.1:3000/health` 正常 → 检查反代是否把域名指到了 `127.0.0.1:3000` / `order_food_app:3000`，以及安全组 80/443。
+- （standalone）`nginx` 起不来 → 多半是证书缺失：先跑 `bash deploy/init-letsencrypt.sh` 签发，确认 `deploy/certbot/conf/live/<域名>/` 下有证书。
 
 ---
 
