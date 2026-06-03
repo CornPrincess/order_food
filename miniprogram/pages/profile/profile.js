@@ -7,9 +7,11 @@ const ROLE_OPTIONS = ['爸爸', '妈妈', '儿子', '女儿', '爷爷', '奶奶'
 
 // 把已选数组转成 { 标签: true } 映射；WXML 不支持 .includes() 方法调用，
 // 必须用 map[item] 这种按 key 取值的形式来判断选中态。
-function toMap(arr) {
+// allowed：仅保留当前可选项内的值，避免历史残留（如已下线的「姜」）被渲染/重复写回。
+function toMap(arr, allowed) {
+  const set = new Set(allowed);
   const m = {};
-  (arr || []).forEach((v) => { m[v] = true; });
+  (arr || []).forEach((v) => { if (set.has(v)) m[v] = true; });
   return m;
 }
 function selectedKeys(map) {
@@ -43,8 +45,8 @@ Page({
     this.setData({
       user,
       family: getFamily(),
-      tasteMap: toMap(user.tastes),
-      dislikeMap: toMap(user.dislikes),
+      tasteMap: toMap(user.tastes, TASTE_OPTIONS),
+      dislikeMap: toMap(user.dislikes, DISLIKE_OPTIONS),
       allergies: (user.allergies || []).join('、'),
       nickname: user.nickname && user.nickname !== '家庭成员' ? user.nickname : '',
       // 角色命中预设则高亮预设，否则填入自定义框
