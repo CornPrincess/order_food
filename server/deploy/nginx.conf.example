@@ -1,3 +1,8 @@
+# ⚠️ 本文件为「宿主机直装 nginx」的旧示例。
+# 若服务器已部署 cc_blog（已有 nginx + certbot 容器独占 80/443），
+# 请改用同目录 README-deploy-with-cc_blog.md 的方案，不要照本文件再起一个 nginx，
+# 否则会与 cc_blog_nginx 争抢 80/443 端口。
+#
 # Nginx 反向代理示例：为自建后端提供 HTTPS（小程序强制要求）
 # 放到 /etc/nginx/conf.d/order_food.conf，替换域名与证书路径后 nginx -s reload
 #
